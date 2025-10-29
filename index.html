@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แผนที่ร้านบุฟเฟ่ต์รอบ ม.บูรพา</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Kanit', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #2d1b1b 0%, #3d2a1f 100%);
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 50%, #ffd93d 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.1em;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .top-section {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .top3-sidebar {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 25px;
+            height: fit-content;
+        }
+
+        .top3-sidebar h2 {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+        }
+
+        .top3-item {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .top3-item:hover {
+            transform: translateX(5px);
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 5px 20px rgba(255, 142, 83, 0.3);
+        }
+
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+            color: white;
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-right: 12px;
+            box-shadow: 0 3px 10px rgba(255, 107, 107, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .top3-name {
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 5px;
+            font-size: 0.95em;
+            line-height: 1.3;
+        }
+
+        .top3-votes {
+            font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .map-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #map {
+            height: 600px;
+            width: 100%;
+        }
+
+        .map-controls {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .map-controls button {
+            display: block;
+            width: 100%;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid rgba(255, 107, 107, 0.5);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .map-controls button:hover {
+            background: rgba(255, 107, 107, 0.5);
+        }
+
+        .map-controls button.active {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+            border-color: #ff6b6b;
+        }
+
+        .map-controls button:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+        }
+
+        .detail-placeholder {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 1.1em;
+        }
+
+        .detail-content {
+            display: none;
+        }
+
+        .detail-content.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+        }
+
+        .detail-title {
+            flex: 1;
+        }
+
+        .detail-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .detail-info {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.95em;
+        }
+
+        .detail-info span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.9em;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.5);
+        }
+
+        .charts-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 35px;
+            margin-bottom: 30px;
+        }
+
+        .charts-section h2 {
+            font-size: 2em;
+            margin-bottom: 30px;
+            text-align: center;
+            background: linear-gradient(135deg, #ff6b6b, #ffd93d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .chart-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .chart-item {
+            margin-bottom: 25px;
+        }
+
+        .chart-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 1em;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .chart-percentage {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #ff8e53;
+        }
+
+        .chart-bar-bg {
+            width: 100%;
+            height: 18px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .chart-bar {
+            height: 100%;
+            border-radius: 20px;
+            transition: width 2s ease-out;
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: rgba(0, 0, 0, 0.9) !important;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 107, 107, 0.5);
+            border-radius: 12px;
+            color: white;
+        }
+
+        .leaflet-popup-tip {
+            background: rgba(0, 0, 0, 0.9) !important;
+        }
+
+        .popup-content h3 {
+            color: #ff8e53;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .popup-content p {
+            margin: 4px 0;
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        @media (max-width: 1024px) {
+            .top-section {
+                grid-template-columns: 1fr;
+            }
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🍽️ แผนที่ร้านบุฟเฟ่ต์รอบมหาวิทยาลัยบูรพา</h1>
+        <p class="subtitle">ผลสำรวจจากนิสิตนักศึกษา 100 คน | รัศมี 1.5 กิโลเมตร</p>
+    </div>
+
+    <div class="container">
+        <div class="top-section">
+            <div class="top3-sidebar">
+                <h2>🏆 Top 3 ร้านยอดนิยม</h2>
+                <div id="topRestaurantList"></div>
+            </div>
+
+            <div class="map-section">
+                <div id="map"></div>
+                <div class="map-controls">
+                    <button id="osmBtn" class="active">🗺️ Street Map</button>
+                    <button id="satelliteBtn">🛰️ Satellite</button>
+                    <button id="hybridBtn">🏙️ Hybrid</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-section" id="detailSection">
+            <div class="detail-placeholder">
+                👆 คลิกที่จุดบนแผนที่เพื่อดูรายละเอียดร้าน
+            </div>
+            <div class="detail-content" id="detailContent"></div>
+        </div>
+
+        <div class="charts-section">
+            <h2>📊 สถิติความถี่ในการทานบุฟเฟ่ต์ ครั้ง/เดือน</h2>
+            <div class="chart-container" id="frequencyChartContainer"></div>
+        </div>
+
+        <div class="charts-section">
+            <h2>📊 ปัจจัยที่นิสิตให้ความสำคัญ</h2>
+            <div class="chart-container" id="factorsChartContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        const restaurantData = {
+            "SukiLand • สุกี้แลนด์ • บุฟเฟต์ • สุกี้ • ชาบู • ปิ้งย่างเกาหลี • บางแสน": { votes: 18, rank: 1 },
+            "นะโม หมูกระทะบุฟเฟต์": { votes: 15, rank: 2 },
+            "ร้านสุมหัว": { votes: 13, rank: 3 },
+            "MUMMAAM SUKI": { votes: 12, rank: 4 },
+            "Cute Pig Korean BBQ": { votes: 9, rank: 5 },
+            "ร้านหมูกระทะ เก้าอี้ไม้": { votes: 7, rank: 6 },
+            "Susu Korean BBQ": { votes: 6, rank: 7 },
+            "Pungkang Shabu (Bangsaen)": { votes: 6, rank: 7 },
+            "ชาบูมูเหมียว Shabu Mumeow": { votes: 5, rank: 8 },
+            "ร้านติดมันส์ สาขาบางแสน": { votes: 4, rank: 9 },
+            "กัสจัง หมูย่างกระทะทอง": { votes: 4, rank: 9 },
+            "Dragon​ Shabu​ Mala​ (麻辣火锅)": { votes: 3, rank: 10 },
+            "ตัวแตกบุฟเฟต์": { votes: 3, rank: 10 },
+            "Dalin Shabu": { votes: 1, rank: 11 },
+            "ซารัง บุฟเฟต์ 사랑": { votes: 1, rank: 11 },
+            "นี่ไงหมูกะทะบุฟเฟ่ทะเลเผาบางแสน": { votes: 1, rank: 11 },
+            "ปลาวาฬทะเลเผา สาขาบางแสน": { votes: 0, rank: 12 },
+            "NikuNiku นิคุนิคุ": { votes: 0, rank: 12 },
+            "Koii Shabu สาขาหน้าม.บูรพา": { votes: 0, rank: 12 }
+        };
+
+        const totalVotes = Object.values(restaurantData).reduce((sum, r) => sum + r.votes, 0);
+        Object.keys(restaurantData).forEach(name => {
+            restaurantData[name].percentage = ((restaurantData[name].votes / totalVotes) * 100).toFixed(1);
+        });
+
+        const sortedByVotes = Object.entries(restaurantData).sort((a, b) => b[1].votes - a[1].votes);
+
+        const frequencyData = {
+            labels: ['1-2 ครั้ง', '3-4 ครั้ง', 'มากกว่า 4 ครั้ง'],
+            data: [76.4, 17.3, 6.4]
+        };
+
+        const factorsData = {
+            labels: ['ราคา', 'รสชาติ', 'ความหลากหลาย', 'การบริการ', 'ไม่จำกัดเวลา', 'ความสะอาด', 'บรรยากาศ', 'มีที่จอดรถ'],
+            data: [81.1, 80.9, 66.4, 44.0, 40.9, 35.5, 33.6, 20.9]
+        };
+
+        const map = L.map('map', { center: [13.2823, 100.9246], zoom: 15, zoomControl: true });
+
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 });
+        const satelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { attribution: '© Google', maxZoom: 20 });
+        const hybridLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { attribution: '© Google', maxZoom: 20 });
+
+        let currentLayer = osmLayer;
+        currentLayer.addTo(map);
+
+        document.getElementById('osmBtn').addEventListener('click', function() {
+            map.removeLayer(currentLayer);
+            currentLayer = osmLayer;
+            currentLayer.addTo(map);
+            updateActiveButton('osmBtn');
+        });
+
+        document.getElementById('satelliteBtn').addEventListener('click', function() {
+            map.removeLayer(currentLayer);
+            currentLayer = satelliteLayer;
+            currentLayer.addTo(map);
+            updateActiveButton('satelliteBtn');
+        });
+
+        document.getElementById('hybridBtn').addEventListener('click', function() {
+            map.removeLayer(currentLayer);
+            currentLayer = hybridLayer;
+            currentLayer.addTo(map);
+            updateActiveButton('hybridBtn');
+        });
+
+        function updateActiveButton(activeId) {
+            document.querySelectorAll('.map-controls button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(activeId).classList.add('active');
+        }
+
+        const restaurantIcon = L.divIcon({
+            className: 'custom-icon',
+            html: '<div style="background: linear-gradient(135deg, #ff6b6b, #ff8e53); width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.6);"><span style="font-size: 20px;">🍽️</span></div>',
+            iconSize: [35, 35]
+        });
+
+        const points = [
+            { name: "ซารัง บุฟเฟต์ 사랑", coords: [100.9235959, 13.2740923], price: "฿200–400", open: "4 PM - 11 PM", url: "https://www.google.com/maps/place/%E0%B8%8B%E0%B8%B2%E0%B8%A3%E0%B8%B1%E0%B8%87+%E0%B8%9A%E0%B8%B8%E0%B8%9F%E0%B9%80%E0%B8%9F%E0%B8%95%E0%B9%8C+%EC%82%AC%EB%9E%91/data=!4m7!3m6!1s0x3102b5583e6469d5:0xe5df5377a9c234d3!8m2!3d13.2740923!4d100.9235959!16s%2Fg%2F11q2vr_n3d!19sChIJ1WlkPli1AjER0zTCqXdT3-U?authuser=0&hl=en&rclk=1" },
+            { name: "SukiLand • สุกี้แลนด์ • บุฟเฟต์ • สุกี้ • ชาบู • ปิ้งย่างเกาหลี • บางแสน", coords: [100.9184616, 13.282733], price: "฿200–400", open: "4 PM - 3 AM", url: "https://www.google.com/maps/place/SukiLand+%E2%80%A2+%E0%B8%AA%E0%B8%B8%E0%B8%81%E0%B8%B5%E0%B9%89%E0%B9%81%E0%B8%A5%E0%B8%99%E0%B8%94%E0%B9%8C+%E2%80%A2+%E0%B8%9A%E0%B8%B8%E0%B8%9F%E0%B9%80%E0%B8%9F%E0%B8%95%E0%B9%8C+%E2%80%A2+%E0%B8%AA%E0%B8%B8%E0%B8%81%E0%B8%B5%E0%B9%89+%E2%80%A2+%E0%B8%8A%E0%B8%B2%E0%B8%9A%E0%B8%B9+%E2%80%A2+%E0%B8%9B%E0%B8%B4%E0%B9%89%E0%B8%87%E0%B8%A2%E0%B9%88%E0%B8%B2%E0%B8%87%E0%B9%80%E0%B8%81%E0%B8%B2%E0%B8%AB%E0%B8%A5%E0%B8%B5+%E2%80%A2+%E0%B8%9A%E0%B8%B2%E0%B8%87%E0%B9%81%E0%B8%AA%E0%B8%99/data=!4m7!3m6!1s0x3102b57c0b8b1e7f:0x4996d62367ac8a21!8m2!3d13.282733!4d100.9184616!16s%2Fg%2F11lm_5zzlt!19sChIJfx6LC3y1AjERIYqsZyPWlkk?authuser=0&hl=en&rclk=1" },
+            { name: "ร้านติดมันส์ สาขาบางแสน", coords: [100.9235483, 13.2739648], price: "฿200–300", open: "3 PM - 11 PM", url: "https://www.google.com/maps/place/%E0%B8%A3%E0%B9%89%E0%B8%B2%E0%B8%99%E0%B8%95%E0%B8%B4%E0%B8%94%E0%B8%A1%E0%B8%B1%E0%B8%99%E0%B8%AA%E0%B9%8C+%E0%B8%AA%E0%B8%B2%E0%B8%82%E0%B8%B2%E0%B8%9A%E0%B8%B2%E0%B8%87%E0%B9%81%E0%B8%AA%E0%B8%99/data=!4m7!3m6!1s0x3102b5ac5e3ec2bd:0xfc8cbc69d58f241!8m2!3d13.2739648!4d100.9235483!16s%2Fg%2F11h9bk8fgn!19sChIJvcI-Xqy1AjERQfJYncbLyA8?authuser=0&hl=en&rclk=1" },
+            { name: "MUMMAAM SUKI", coords: [100.923382, 13.2744597], price: "฿200–400", open: "24 Hours", url: "https://www.google.com/maps/place/MUMMAAM+SUKI/data=!4m7!3m6!1s0x3102b5861c7730d7:0x9add062b219c8861!8m2!3d13.2744597!4d100.923382!16s%2Fg%2F11q30wkgzj!19sChIJ1zB3HIa1AjERYYicISsG3Zo?authuser=0&hl=en&rclk=1" },
+            { name: "นี่ไงหมูกะทะบุฟเฟ่ทะเลเผาบางแสน", coords: [100.9253375, 13.2692579], price: "฿200–400", open: "4 PM - 11 PM", url: "https://www.google.com/maps/place/%E0%B8%99%E0%B8%B5%E0%B9%88%E0%B9%84%E0%B8%87%E0%B8%AB%E0%B8%A1%E0%B8%B9%E0%B8%81%E0%B8%B0%E0%B8%97%E0%B8%B0%E0%B8%9A%E0%B8%B8%E0%B8%9F%E0%B9%80%E0%B8%9F%E0%B9%88%E0%B8%97%E0%B8%B0%E0%B9%80%E0%B8%A5%E0%B9%80%E0%B8%9C%E0%B8%B2%E0%B8%9A%E0%B8%B2%E0%B8%87%E0%B9%81%E0%B8%AA%E0%B8%99/@13.2692579,100.9253375,17z/data=!3m1!4b1!4m6!3m5!1s0x3102b535b65a5beb:0x13d8ad0075c9efe0!8m2!3d13.2692579!4d100.9253375!16s%2Fg%2F11tnmx19h7?entry=ttu&g_ep=EgoyMDI1MTAyNi4wIKXMDSoASAFQAw%3D%3D" },
+            { name: "Cute Pig Korean BBQ", coords: [100.9200029, 13.2808728], price: "฿200–400", open: "4 PM - 3 AM", url: "https://www.google.com/maps/place/Cute+Pig+Korean+BBQ/data=!4m7!3m6!1s0x3102b598d1a276b1:0x5f0d62908c00880e!8m2!3d13.2808728!4d100.9200029!16s%2Fg%2F11r2hl3ckj!19sChIJsXai0Zi1AjERDogAjJBiDV8?authuser=0&hl=en&rclk=1" },
+            { name: "ร้านหมูกระทะ เก้าอี้ไม้", coords: [100.9232352, 13.2740576], price: "฿180–200", open: "3 PM - 10 PM", url: "https://www.google.com/maps/place/%E0%B8%A3%E0%B9%89%E0%B8%B2%E0%B8%99%E0%B8%AB%E0%B8%A1%E0%B8%B9%E0%B8%81%E0%B8%A3%E0%B8%B0%E0%B8%97%E0%B8%B0+%E0%B9%80%E0%B8%81%E0%B9%89%E0%B8%B2%E0%B8%AD%E0%B8%B5%E0%B9%89%E0%B9%84%E0%B8%A1%E0%B9%89/data=!4m7!3m6!1s0x3102b4effab8e131:0x76b25b89f8f4a13f!8m2!3d13.2740576!4d100.9232352!16s%2Fg%2F11gbtzpqf3!19sChIJMeG4-u-0AjERP6H0-IlbsnY?authuser=0&hl=en&rclk=1" },
+            { name: "Dragon​ Shabu​ Mala​ (麻辣火锅)", coords: [100.9229093, 13.275561], price: "฿300–400", open: "12 PM - 11 PM", url: "https://www.google.com/maps?q=13.275561,100.9229093" },
+            { name: "Dalin Shabu", coords: [100.9239263, 13.2729796], price: "฿400–600", open: "11 AM - 10 PM", url: "https://www.google.com/maps/place/Dalin+Shabu/data=!4m7!3m6!1s0x3102b50025faf2b5:0xf68eae9ab896df8f!8m2!3d13.2729796!4d100.9239263!16s%2Fg%2F11wr3bz9c4!19sChIJtfL6JQC1AjERj9-WuJqujvY?authuser=0&hl=en&rclk=1" },
+            { name: "นะโม หมูกระทะบุฟเฟต์", coords: [100.9289667, 13.2847321], price: "฿100–200", open: "4 PM - 11 PM", url: "https://www.google.com/maps/place/%E0%B8%99%E0%B8%B0%E0%B9%82%E0%B8%A1+%E0%B8%AB%E0%B8%A1%E0%B8%B9%E0%B8%81%E0%B8%A3%E0%B8%B0%E0%B8%97%E0%B8%B0%E0%B8%9A%E0%B8%B8%E0%B8%9F%E0%B9%80%E0%B8%9F%E0%B8%95%E0%B9%8C/@13.2847321,100.9289667,17z/data=!3m1!4b1!4m6!3m5!1s0x3102b4ddefd036e5:0xbe0ea81c3599a8e5!8m2!3d13.2847321!4d100.9289667!16s%2Fg%2F11cs637hjl?entry=ttu&g_ep=EgoyMDI1MTAyNi4wIKXMDSoASAFQAw%3D%3D" },
+            { name: "ปลาวาฬทะเลเผา สาขาบางแสน", coords: [100.9233008, 13.2703282], price: "฿300–400", open: "3 PM - 11 PM", url: "https://www.google.com/maps/place/%E0%B8%9B%E0%B8%A5%E0%B8%B2%E0%B8%A7%E0%B8%B2%E0%B8%AC%E0%B8%97%E0%B8%B0%E0%B9%80%E0%B8%A5%E0%B9%80%E0%B8%9C%E0%B8%B2+%E0%B8%AA%E0%B8%B2%E0%B8%82%E0%B8%B2%E0%B8%9A%E0%B8%B2%E0%B8%87%E0%B9%81%E0%B8%AA%E0%B8%99/@13.2703282,100.9233008,17z/data=!3m1!4b1!4m6!3m5!1s0x3102b5e031758df3:0xf417cbbc651e052c!8m2!3d13.2703282!4d100.9233008!16s%2Fg%2F11kpcxbmx1?authuser=0&entry=ttu&g_ep=EgoyMDI1MTAyNi4wIKXMDSoASAFQAw%3D%3D" },
+            { name: "NikuNiku นิคุนิคุ", coords: [100.9268279, 13.2888887], price: "฿200–300", open: "3 PM - 11 PM", url: "https://www.google.com/maps/place/NikuNiku+%E0%B8%99%E0%B8%B4%E0%B8%84%E0%B8%B8%E0%B8%99%E0%B8%B4%E0%B8%84%E0%B8%B8/data=!4m7!3m6!1s0x3102c843b7371355:0xda1dac0f3e022c9f!8m2!3d13.2888887!4d100.9268279!16s%2Fg%2F113k28v68!19sChIJVRM3t0PIAjERnywCPg-sHdo?authuser=0&hl=en&rclk=1" },
+            { name: "Koii Shabu สาขาหน้าม.บูรพา", coords: [100.9241864, 13.2861599], price: "฿300–400", open: "11 AM - 10 PM", url: "https://www.google.com/maps/place/Koii+Shabu+%E0%B8%AA%E0%B8%B2%E0%B8%82%E0%B8%B2%E0%B8%AB%E0%B8%99%E0%B9%89%E0%B8%B2%E0%B8%A1.%E0%B8%9A%E0%B8%B9%E0%B8%A3%E0%B8%9E%E0%B8%B2/data=!4m7!3m6!1s0x3102b58681b629f9:0x737ac8835fcde411!8m2!3d13.2861599!4d100.9241864!16s%2Fg%2F11j6gz8j97!19sChIJ-Sm2gYa1AjEREeTNX4PIenM?authuser=0&hl=en&rclk=1" },
+            { name: "Susu Korean BBQ", coords: [100.9256315, 13.2885201], price: "฿200–300", open: "4 PM - 10 PM", url: "https://www.google.com/maps/place/Susu+Korean+BBQ/@13.2885201,100.9256315,17z/data=!3m1!4b1!4m6!3m5!1s0x3102b5ee9d1cce33:0xd02a536cd46e866d!8m2!3d13.2885201!4d100.9256315!16s%2Fg%2F11j0qf_kb0?entry=ttu&g_ep=EgoyMDI1MTAyNi4wIKXMDSoASAFQAw%3D%3D" },
+            { name: "ชาบูมูเหมียว Shabu Mumeow", coords: [100.9277283, 13.2887461], price: "฿200–400", open: "4 PM - 11 PM", url: "https://www.google.com/maps/place/%E0%B8%8A%E0%B8%B2%E0%B8%9A%E0%B8%B9%E0%B8%A1%E0%B8%B9%E0%B9%80%E0%B8%AB%E0%B8%A1%E0%B8%B5%E0%B8%A2%E0%B8%A7+Shabu+Mumeow/@13.2887461,100.9277283,17z/data=!3m1!4b1!4m6!3m5!1s0x3102b529d8811a1d:0x4a63b467ec0f4eea!8m2!3d13.2887461!4d100.9277283!16s%2Fg%2F11vbxzthyn?entry=ttu&g_ep=EgoyMDI1MTAyNi4wIKXMDSoASAFQAw%3D%3D" },
+            { name: "Pungkang Shabu (Bangsaen)", coords: [100.9282201, 13.2869058], price: "฿200–400", open: "11 AM - 9 PM", url: "https://www.google.com/maps/place/Pungkang+Shabu+(Bangsaen)/@13.2869058,100.9282201,19z/data=!3m1!4b1!4m6!3m5!1s0x3102b56af33efb89:0xeda57fdf8b59f3c!8m2!3d13.2869058!4d100.9282201!16s%2Fg%2F11jg5jtml_?entry=ttu&g_ep=EgoyMDI1MTAyNi4wIKXMDSoASAFQAw%3D%3D" },
+            { name: "ร้านสุมหัว", coords: [100.9325121, 13.2796229], price: "฿100–200", open: "4 PM - 2 AM", url: "https://www.google.com/maps/place/%E0%B8%A3%E0%B9%89%E0%B8%B2%E0%B8%99%E0%B8%AA%E0%B8%B8%E0%B8%A1%E0%B8%AB%E0%B8%B1%E0%B8%A7/@13.2796229,100.9325121,734m/data=!3m2!1e3!4b1!4m6!3m5!1s0x3102b4e172f48fa3:0xb872af2f3e5681f!8m2!3d13.2796229!4d100.9325121!16s%2Fg%2F11cly_30_j?authuser=0&entry=ttu&g_ep=EgoyMDI1MTAyNi4wIKXMDSoASAFQAw%3D%3D" },
+            { name: "ตัวแตกบุฟเฟต์", coords: [100.9233978, 13.274724], price: "฿200–400", open: "4 PM - 11 PM", url: "https://www.google.com/maps/place/%E0%B8%95%E0%B8%B1%E0%B8%A7%E0%B9%81%E0%B8%95%E0%B8%81%E0%B8%9A%E0%B8%B8%E0%B8%9F%E0%B9%80%E0%B8%9F%E0%B8%95%E0%B9%8C/@13.2747292,100.9208229,17z/data=!4m14!1m7!3m6!1s0x3102b5002f68c74d:0xae96eb063d7ebafa!2z4LiV4Lix4Lin4LmB4LiV4LiB4Lia4Li44Lif4LmA4Lif4LiV4LmM!8m2!3d13.274724!4d100.9233978!16s%2Fg%2F11w1cvtp12!3m5!1s0x3102b5002f68c74d:0xae96eb063d7ebafa!8m2!3d13.274724!4d100.9233978!16s%2Fg%2F11w1cvtp12?entry=ttu&g_ep=EgoyMDI1MTAyNi4wIKXMDSoASAFQAw%3D%3D" },
+            { name: "กัสจัง หมูย่างกระทะทอง", coords: [100.9313237, 13.2798016], price: "฿150–300", open: "4 PM - 11 PM", url: "https://www.google.com/maps?q=13.2798016,100.9313237" }
+        ];
+
+        function showRestaurantDetail(point) {
+            const detailContent = document.getElementById('detailContent');
+            detailContent.innerHTML = `
+                <div class="detail-header">
+                    <div class="detail-title">
+                        <div class="detail-name">${point.name}</div>
+                        <div class="detail-info">
+                            <span>💰 ${point.price}</span>
+                            <span>🕒 ${point.open}</span>
+                        </div>
+                    </div>
+                    <div class="detail-actions">
+                        <a href="${point.url}" target="_blank" class="btn btn-primary">📍 เปิดใน Google Maps</a>
+                    </div>
+                </div>
+            `;
+            document.querySelector('.detail-placeholder').style.display = 'none';
+            detailContent.classList.add('active');
+            document.getElementById('detailSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        points.forEach(point => {
+            const data = restaurantData[point.name] || { rank: '-', votes: 0, percentage: 0 };
+            const marker = L.marker([point.coords[1], point.coords[0]], { icon: restaurantIcon }).addTo(map);
+            marker.on('click', function() { showRestaurantDetail(point); });
+            const popupContent = `
+                <div class="popup-content">
+                    <h3>${point.name}</h3>
+                    <p><strong>💰</strong> ${point.price}</p>
+                    <p><strong>🕒</strong> ${point.open}</p>
+                    ${data.votes > 0 ? `<p><strong>🏆</strong> อันดับ ${data.rank} (${data.votes} โหวต)</p>` : ''}
+                    <p style="margin-top: 8px; font-size: 0.85em; color: #ff8e53;">👆 คลิกจุดเพื่อดูรายละเอียดเพิ่มเติม</p>
+                </div>
+            `;
+            marker.bindPopup(popupContent);
+        });
+
+        L.circle([13.2823, 100.9246], { color: '#ff6b6b', fillColor: '#ff8e53', fillOpacity: 0.15, radius: 1500, weight: 2 }).addTo(map);
+
+        const topRestaurantList = document.getElementById('topRestaurantList');
+        sortedByVotes.slice(0, 3).forEach(([name, data]) => {
+            const restaurant = points.find(p => p.name === name);
+            const item = document.createElement('div');
+            item.className = 'top3-item';
+            item.innerHTML = `
+                <span class="rank-badge">${data.rank}</span>
+                <div style="flex: 1;">
+                    <div class="top3-name">${name}</div>
+                    <div class="top3-votes">✓ ${data.votes} โหวต (${data.percentage}%)</div>
+                </div>
+            `;
+            item.addEventListener('click', () => {
+                if (restaurant) {
+                    map.setView([restaurant.coords[1], restaurant.coords[0]], 17);
+                    showRestaurantDetail(restaurant);
+                }
+            });
+            topRestaurantList.appendChild(item);
+        });
+
+        const colors = [
+            'linear-gradient(90deg, #ff6b6b 0%, #ff8e53 100%)',
+            'linear-gradient(90deg, #ffd93d 0%, #ffb347 100%)',
+            'linear-gradient(90deg, #ff8e53 0%, #fe6b8b 100%)',
+            'linear-gradient(90deg, #f9d423 0%, #ff4e50 100%)',
+            'linear-gradient(90deg, #fa709a 0%, #fee140 100%)',
+            'linear-gradient(90deg, #ff9a56 0%, #ff6a88 100%)',
+            'linear-gradient(90deg, #ffb347 0%, #ffcc33 100%)',
+            'linear-gradient(90deg, #ff7e5f 0%, #feb47b 100%)'
+        ];
+
+        const frequencyChartContainer = document.getElementById('frequencyChartContainer');
+        frequencyData.labels.forEach((label, index) => {
+            const item = document.createElement('div');
+            item.className = 'chart-item';
+            item.innerHTML = `
+                <div class="chart-label">
+                    <span>${label}</span>
+                    <span class="chart-percentage">${frequencyData.data[index]}%</span>
+                </div>
+                <div class="chart-bar-bg">
+                    <div class="chart-bar" style="width: 0%; background: ${colors[index]};"></div>
+                </div>
+            `;
+            frequencyChartContainer.appendChild(item);
+        });
+
+        const factorsChartContainer = document.getElementById('factorsChartContainer');
+        factorsData.labels.forEach((label, index) => {
+            const item = document.createElement('div');
+            item.className = 'chart-item';
+            item.innerHTML = `
+                <div class="chart-label">
+                    <span>${label}</span>
+                    <span class="chart-percentage">${factorsData.data[index]}%</span>
+                </div>
+                <div class="chart-bar-bg">
+                    <div class="chart-bar" style="width: 0%; background: ${colors[index]};"></div>
+                </div>
+            `;
+            factorsChartContainer.appendChild(item);
+        });
+
+        setTimeout(() => {
+            document.querySelectorAll('.chart-bar').forEach((bar, index) => {
+                const containerParent = bar.closest('.chart-container');
+                if (containerParent.id === 'frequencyChartContainer') {
+                    bar.style.width = frequencyData.data[index % frequencyData.data.length] + '%';
+                } else if (containerParent.id === 'factorsChartContainer') {
+                    bar.style.width = factorsData.data[index % factorsData.data.length] + '%';
+                }
+            });
+        }, 100);
+    </script>
+</body>
+</html>
