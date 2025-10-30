@@ -439,7 +439,7 @@
 
         const factorsData = {
             labels: ['ราคา', 'รสชาติ', 'ความหลากหลาย', 'การบริการ', 'ไม่จำกัดเวลา', 'ความสะอาด', 'บรรยากาศ', 'มีที่จอดรถ'],
-            data: [81.1, 80.9, 66.4, 44.0, 40.9, 35.5, 33.6, 20.9]
+            data: [81.8, 80.9, 66.4, 44.0, 40.9, 35.5, 33.6, 20.9]
         };
 
         const map = L.map('map', { center: [13.2823, 100.9246], zoom: 15, zoomControl: true });
@@ -609,15 +609,18 @@
         });
 
         setTimeout(() => {
-            document.querySelectorAll('.chart-bar').forEach((bar, index) => {
-                const containerParent = bar.closest('.chart-container');
-                if (containerParent.id === 'frequencyChartContainer') {
-                    bar.style.width = frequencyData.data[index % frequencyData.data.length] + '%';
-                } else if (containerParent.id === 'factorsChartContainer') {
-                    bar.style.width = factorsData.data[index % factorsData.data.length] + '%';
-                }
-            });
-        }, 100);
+    // กราฟความถี่
+    const frequencyBars = document.querySelectorAll('#frequencyChartContainer .chart-bar');
+    frequencyBars.forEach((bar, index) => {
+        bar.style.width = frequencyData.data[index] + '%';
+    });
+    
+    // กราฟปัจจัย
+    const factorsBars = document.querySelectorAll('#factorsChartContainer .chart-bar');
+    factorsBars.forEach((bar, index) => {
+        bar.style.width = factorsData.data[index] + '%';
+    });
+}, 100);
     </script>
 </body>
 </html>
